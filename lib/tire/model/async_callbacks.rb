@@ -9,19 +9,26 @@ module Tire
       def self.included(base)
         # Bind after save or create callback
         if base.respond_to? :after_commit
-          base.send :after_commit, :async_tire_save_index
-
-        elsif base.respond_to? :after_save
-          base.send :after_save, :async_tire_save_index
-        end
-
-        # Bind before destroy callback
-        if base.respond_to? :before_destroy
-          base.send :before_destroy, :async_tire_delete_index
+          base.send :after_commit, :async_tire_after_commit
+        else
+          if base.respond_to? :after_save
+            base.send :after_save, :async_tire_save_index
+          end
+          # Bind before destroy callback
+          if base.respond_to? :before_destroy
+            base.send :before_destroy, :async_tire_delete_index
+          end
         end
       end
 
       private
+      def async_tire_after_commit
+        if transaction_include_action?(:create) || transaction_include_action?(:update)
+          async_tire_save_index
+        elsif transaction_include_action?(:destroy)
+          async_tire_delete_index
+        end
+      end
 
       def async_tire_save_index
         async_tire_callback :update
