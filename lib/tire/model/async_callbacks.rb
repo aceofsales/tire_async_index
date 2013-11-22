@@ -47,7 +47,7 @@ module Tire
             tire.index.remove self
           end
         else
-          TireAsyncIndex.worker.run(type, self.class.name, get_async_tire_object_id)
+          TireAsyncIndex.worker.run(type, self.class.name, get_async_tire_object_id, get_async_tire_opts)
         end
       end
 
@@ -61,6 +61,16 @@ module Tire
             self.id
           end
         end
+      end
+
+      def get_async_tire_opts
+        opts = {}
+
+        if self.respond_to?(:elasticsearch_remove_options)
+          opts[:remove] = self.elasticsearch_remove_options
+        end
+
+        opts
       end
 
     end

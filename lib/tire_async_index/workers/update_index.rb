@@ -12,7 +12,7 @@ module TireAsyncIndex
       #   id - Document id
       #
 
-      def process(action_type, class_name, id)
+      def process(action_type, class_name, id, opts)
         klass = find_class_const(class_name)
 
         case action_type.to_sym
@@ -20,12 +20,22 @@ module TireAsyncIndex
             object = klass.send(get_finder_method(klass), id)
 
             if object.present? && object.respond_to?(:tire)
-              object.tire.update_index
+              store_opts = {}
+              if object.respond_to?(:elasticsearch_store_options)
+                store_opts = object.elasticsearch_store_options
+              end
+
+              if store_opts.empty?
+                object.tire.update_index
+              else
+                object.tire.index.store(object, store_opts)
+              end
             end
           when :delete
 
             klass.new.tap do |inst|
-              inst.tire.index.remove(inst.tire.document_type, { _id: id })
+              type = opts.fetch(:remove, {}).fetch(:type, inst.tire.document_type)
+              inst.tire.index.remove(type, { _id: id })
             end
         end
       end
