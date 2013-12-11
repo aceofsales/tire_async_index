@@ -9,7 +9,7 @@ module TireAsyncIndex
           .perform_async(action_type, class_name, id, opts)
       end
 
-      def perform(action_type, class_name, id, opts)
+      def perform(action_type, class_name, id, opts = {})
         process(action_type, class_name, id, opts)
       end
 

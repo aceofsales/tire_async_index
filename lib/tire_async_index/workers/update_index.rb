@@ -12,7 +12,7 @@ module TireAsyncIndex
       #   id - Document id
       #
 
-      def process(action_type, class_name, id, opts)
+      def process(action_type, class_name, id, opts = {})
         klass = find_class_const(class_name)
 
         case action_type.to_sym
