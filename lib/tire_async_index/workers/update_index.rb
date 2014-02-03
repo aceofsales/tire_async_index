@@ -13,45 +13,28 @@ module TireAsyncIndex
       #
 
       def process(action_type, class_name, id, opts = {})
-        klass = find_class_const(class_name)
-
         case action_type.to_sym
-          when :update
-            object = klass.send(get_finder_method(klass), id)
+        when :update
+          object = FindModel.new(class_name: class_name).find(id)
 
-            if object.present? && object.respond_to?(:tire)
-              store_opts = {}
-              if object.respond_to?(:elasticsearch_store_options)
-                store_opts = object.elasticsearch_store_options
-              end
-
-              if store_opts.empty?
-                object.tire.update_index
-              else
-                object.tire.index.store(object, store_opts)
-              end
+          if object.present? && object.respond_to?(:tire)
+            store_opts = {}
+            if object.respond_to?(:elasticsearch_store_options)
+              store_opts = object.elasticsearch_store_options
             end
-          when :delete
 
-            klass.new.tap do |inst|
-              type = opts.fetch(:remove, {}).fetch(:type, inst.tire.document_type)
-              inst.tire.index.remove(type, { _id: id })
+            if store_opts.empty?
+              object.tire.update_index
+            else
+              object.tire.index.store(object, store_opts)
             end
-        end
-      end
-
-      def find_class_const(class_name)
-        if defined?(RUBY_VERSION) && RUBY_VERSION.match(/^2\./)
-          Kernel.const_get(class_name)
-        else
-          class_name.split('::').reduce(Object) do |mod, const_name|
-            mod.const_get(const_name)
+          end
+        when :delete
+          FindModel.new(class_name: class_name).klass.new.tap do |inst|
+            type = opts.fetch(:remove, {}).fetch(:type, inst.tire.document_type)
+            inst.tire.index.remove(type, { _id: id })
           end
         end
-      end
-
-      def get_finder_method(klass)
-        klass.respond_to?(:tire_async_finder) ? :tire_async_finder : :find
       end
     end
   end

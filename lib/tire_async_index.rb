@@ -1,6 +1,7 @@
 require "tire_async_index/configuration"
 require "tire_async_index/exceptions"
 require "tire_async_index/version"
+require "tire_async_index/find_model"
 
 module TireAsyncIndex
   extend self

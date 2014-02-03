@@ -23,9 +23,11 @@ module Tire
 
       private
       def async_tire_after_commit
-        if transaction_include_action?(:create) || transaction_include_action?(:update)
+        # Don't trust the instance in an after_commit callback
+        fresh_object = TireAsyncIndex::FindModel.new(class_name: self.class.name).find(get_async_tire_object_id)
+        if fresh_object.present? && (transaction_include_action?(:create) || transaction_include_action?(:update))
           async_tire_save_index
-        elsif transaction_include_action?(:destroy)
+        elsif fresh_object.nil? || transaction_include_action?(:destroy)
           async_tire_delete_index
         end
       end
