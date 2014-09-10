@@ -37,6 +37,26 @@ module TireAsyncIndex
     autoload :Resque,      'tire_async_index/workers/resque'
   end
 
+  def inline!
+    orig_inline = self._inline
+    self._inline = true
+    yield
+  ensure
+    self._inline = orig_inline
+  end
+
+  def inline?
+    !!self._inline
+  end
+
+  protected
+  def _inline
+    Thread.current[:tire_async_index_inline]
+  end
+
+  def _inline=(inline)
+    Thread.current[:tire_async_index_inline] = inline
+  end
 end
 
 require 'tire/model/async_callbacks'

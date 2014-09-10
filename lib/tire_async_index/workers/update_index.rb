@@ -4,6 +4,18 @@ module TireAsyncIndex
     # Worker for updating ElasticSearch index
     class UpdateIndex
 
+      def self.run(*args)
+        if TireAsyncIndex.inline?
+          self.new.process(*args)
+        else
+          self.enqueue(*args)
+        end
+      end
+
+      def self.enqueue(*args)
+        raise NotImplementedError
+      end
+
       # Update or delete ElasticSearch index based on the action_type parameter.
       #
       # Parameters:
