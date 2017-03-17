@@ -21,7 +21,11 @@ module TireAsyncIndex
       if klass.respond_to?(:tire_async_finder)
         klass.tire_async_finder
       else
-        klass.where(id: id).first
+        begin
+          klass.find(id)
+        rescue ActiveRecord::RecordNotFound, Mongoid::Errors::DocumentNotFound
+          nil
+        end
       end
     end
   end
