@@ -1,8 +1,14 @@
+require 'hashie/mash'
+require 'hashie/extensions/mash/symbolize_keys'
+
 module TireAsyncIndex
   module Workers
 
     # Worker for updating ElasticSearch index
     class UpdateIndex
+      class Smash < ::Hashie::Mash
+        include Hashie::Extensions::Mash::SymbolizeKeys
+      end
 
       def self.run(*args)
         if TireAsyncIndex.inline?
@@ -42,9 +48,19 @@ module TireAsyncIndex
             end
           end
         when :delete
+          opts = Smash.new opts
           FindModel.new(class_name: class_name).klass.new.tap do |inst|
-            type = opts.fetch(:remove, {}).fetch(:type, inst.tire.document_type)
-            inst.tire.index.remove(type, { _id: id })
+            options = Smash.new(opts.fetch(:remove, {}))
+            type = options.delete(:type).presence || inst.tire.document_type
+
+            TireAsyncIndex.configuration.around_delete_callback.call(
+              index_name: inst.tire.index_name,
+              document_type: type,
+              model_id: id,
+              routing: options.routing
+            ) do
+              inst.tire.index.remove(type, { _id: id }, options)
+            end
           end
         end
       end
